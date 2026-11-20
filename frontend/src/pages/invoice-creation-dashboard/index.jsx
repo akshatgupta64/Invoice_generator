@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import Header from '../../components/ui/Header';
 import Breadcrumb from '../../components/ui/Breadcrumb';
@@ -17,6 +18,7 @@ import InvoicePreviewModal from 'components/ui/InvoicePreviewModal';
 
 const InvoiceCreationDashboard = () => {
   const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
 
   const [companyData, setCompanyData] = useState({ name:'', email:'', phone:'', website:'', address:'', city:'', state:'', zipCode:'', logo:null });
   const [customerData, setCustomerData] = useState({ name:'', email:'', phone:'', company:'', address:'', city:'', state:'', zipCode:'' });
@@ -33,10 +35,12 @@ const InvoiceCreationDashboard = () => {
   const [previewVisible, setPreviewVisible] = useState(true);
   const [isPreviewModalOpen, setPreviewModalOpen] = useState(false);
 
-
-
-useEffect(() => {
-}, []);
+  // Redirect to login if user is not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/login');
+    }
+  }, [user, authLoading, navigate]);
 
   // Load company profile & invoice number
   useEffect(() => {
@@ -65,7 +69,13 @@ useEffect(() => {
         if (isMounted) setIsLoading(false);
       }
     };
-    if (user && !authLoading) loadProfileAndNumber();
+
+    if (user && !authLoading) {
+      loadProfileAndNumber();
+    } else if (!authLoading && !user) {
+      setIsLoading(false);
+    }
+
     return () => { isMounted = false; };
   }, [user, authLoading]);
 

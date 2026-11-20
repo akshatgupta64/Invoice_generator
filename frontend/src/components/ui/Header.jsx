@@ -26,8 +26,8 @@ const Header = () => {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex-shrink-0">
-            <Link to="/" className="flex items-center">
-              <img  src="https://sdwgyjjcxdhdlcuvjadq.supabase.co/storage/v1/object/public/invoices//delta_zero_vertical_logo-removebg-preview.png" alt="Invoice Pro Logo" className="h-24 w-auto" />
+            <Link to="/" className="flex items-center space-x-2">
+              <span className="text-2xl font-bold text-primary tracking-tight">InvoicePro</span>
             </Link>
           </div>
 
