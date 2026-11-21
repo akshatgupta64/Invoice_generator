@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { pdf } from '@react-pdf/renderer';
 import InvoicePDFDocument from '../../components/pdf/InvoicePDFDocument';
 import invoiceService from '../../utils/invoiceService';
@@ -14,6 +15,7 @@ import Button from '../../components/ui/Button';
 import supabase from '../../utils/supabase';
 
 const InvoiceHistoryManagement = () => {
+  const navigate = useNavigate();
   const [invoices, setInvoices] = useState([]);
   const [filteredInvoices, setFilteredInvoices] = useState([]);
   const [selectedInvoices, setSelectedInvoices] = useState([]);
@@ -257,15 +259,20 @@ const InvoiceHistoryManagement = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <main className="pt-16">
+      <main className="pt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Breadcrumb items={breadcrumbItems} />
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-text-primary">Invoice History & Management</h1>
-              <p className="text-text-secondary mt-2">Track, search, and manage all your invoices</p>
+              <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">Invoice History & Management</h1>
+              <p className="text-slate-500 text-sm mt-1">Track payments, filter ledger records, and download client PDFs</p>
             </div>
-          
+            <button
+              onClick={() => navigate('/create-invoice')}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-white font-semibold text-sm rounded-xl shadow-md hover:bg-primary-dark transition"
+            >
+              + Create New Invoice
+            </button>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">

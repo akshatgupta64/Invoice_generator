@@ -56,7 +56,7 @@ const CompanySettingsConfiguration = () => {
     <div className="min-h-screen bg-background">
       <Header />
       
-      <main className="pt-16">
+      <main className="pt-20">
         <div className="px-5 lg:px-6 py-8">
           <div className="max-w-7xl mx-auto">
             <Breadcrumb />
