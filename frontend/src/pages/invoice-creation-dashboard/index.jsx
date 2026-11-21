@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import Header from '../../components/ui/Header';
 import Breadcrumb from '../../components/ui/Breadcrumb';
@@ -19,6 +19,7 @@ import InvoicePreviewModal from 'components/ui/InvoicePreviewModal';
 const InvoiceCreationDashboard = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [companyData, setCompanyData] = useState({ name:'', email:'', phone:'', website:'', address:'', city:'', state:'', zipCode:'', logo:null });
   const [customerData, setCustomerData] = useState({ name:'', email:'', phone:'', company:'', address:'', city:'', state:'', zipCode:'' });
@@ -41,6 +42,20 @@ const InvoiceCreationDashboard = () => {
       navigate('/login');
     }
   }, [user, authLoading, navigate]);
+
+  // Pre-fill item if directed from catalog
+  useEffect(() => {
+    if (location.state?.prefillItem) {
+      const p = location.state.prefillItem;
+      setItems([{
+        id: Date.now(),
+        description: p.name + (p.description ? ` - ${p.description}` : ''),
+        quantity: 1,
+        rate: p.rate || 0,
+        amount: p.rate || 0
+      }]);
+    }
+  }, [location.state]);
 
   // Load company profile & invoice number
   useEffect(() => {

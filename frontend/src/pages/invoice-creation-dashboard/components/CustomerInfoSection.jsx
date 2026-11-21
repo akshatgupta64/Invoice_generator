@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Input from '../../../components/ui/Input';
 import Icon from '../../../components/AppIcon';
+import customerService from '../../../utils/customerService';
 
 const CustomerInfoSection = ({ 
   customerData, 
@@ -8,6 +9,34 @@ const CustomerInfoSection = ({
   isCollapsed, 
   onToggleCollapse 
 }) => {
+  const [savedClients, setSavedClients] = useState([]);
+
+  useEffect(() => {
+    customerService.getCustomers().then(res => {
+      if (res?.success && res.data) {
+        setSavedClients(res.data);
+      }
+    });
+  }, []);
+
+  const handleSelectSavedClient = (clientId) => {
+    const selected = savedClients.find(c => c.id === clientId);
+    if (selected) {
+      onCustomerDataChange({
+        ...customerData,
+        id: selected.id,
+        name: selected.name || '',
+        email: selected.email || '',
+        phone: selected.phone || '',
+        company: selected.company || '',
+        address: selected.address || '',
+        city: selected.city || '',
+        state: selected.state || '',
+        zipCode: selected.zip_code || ''
+      });
+    }
+  };
+
   const handleInputChange = (field, value) => {
     onCustomerDataChange({
       ...customerData,
@@ -34,6 +63,26 @@ const CustomerInfoSection = ({
       
       {!isCollapsed && (
         <div className="p-4 pt-0 space-y-4">
+          {savedClients.length > 0 && (
+            <div className="p-3 bg-indigo-50/70 dark:bg-slate-800/80 rounded-xl border border-indigo-100 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="text-xs font-semibold text-indigo-900 dark:text-indigo-200">
+                ⚡ Select from Saved Clients:
+              </div>
+              <select
+                onChange={(e) => handleSelectSavedClient(e.target.value)}
+                defaultValue=""
+                className="px-3 py-1.5 text-xs bg-white dark:bg-slate-900 border border-indigo-200 dark:border-slate-600 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="" disabled>Choose existing client ({savedClients.length} available)...</option>
+                {savedClients.map(c => (
+                  <option key={c.id} value={c.id}>
+                    {c.name} {c.company ? `(${c.company})` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="block text-sm font-medium text-text-primary">
