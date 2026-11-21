@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { pdf } from '@react-pdf/renderer';
+import InvoicePDFDocument from '../../components/pdf/InvoicePDFDocument';
+import invoiceService from '../../utils/invoiceService';
 import Header from '../../components/ui/Header';
 import Breadcrumb from '../../components/ui/Breadcrumb';
 import FilterToolbar from './components/FilterToolbar';
@@ -159,7 +162,71 @@ const InvoiceHistoryManagement = () => {
   const handleAction = async (action, invoiceId, newStatus) => {
     if (action === 'download') {
       const invoice = invoices.find(inv => inv.id === invoiceId);
-      return invoice?.pdf_url || null;
+      if (invoice?.pdf_url) {
+        return invoice.pdf_url;
+      }
+      // If pdf_url is not set, generate the PDF directly from the invoice record
+      try {
+        const fullInvoiceRes = await invoiceService.getInvoice(invoiceId);
+        if (fullInvoiceRes?.success && fullInvoiceRes.data) {
+          const inv = fullInvoiceRes.data;
+          const invoiceDetails = {
+            invoiceNumber: inv.invoice_number,
+            issueDate: inv.issue_date,
+            dueDate: inv.due_date,
+            paymentTerms: inv.payment_terms,
+            notes: inv.notes,
+            currency: inv.currency || 'INR'
+          };
+          const companyData = inv.company_profile ? {
+            name: inv.company_profile.name,
+            email: inv.company_profile.email,
+            phone: inv.company_profile.phone,
+            address: inv.company_profile.address,
+            city: inv.company_profile.city,
+            state: inv.company_profile.state,
+            logo: inv.company_profile.logo_url
+          } : {};
+          const customerData = inv.customer ? {
+            name: inv.customer.name,
+            email: inv.customer.email,
+            phone: inv.customer.phone,
+            address: inv.customer.address,
+            company: inv.customer.company
+          } : {};
+          const items = (inv.invoice_items || []).map(i => ({
+            description: i.description,
+            quantity: i.quantity,
+            rate: i.rate,
+            amount: i.amount
+          }));
+
+          const blob = await pdf(
+            <InvoicePDFDocument
+              invoiceDetails={invoiceDetails}
+              companyData={companyData}
+              customerData={customerData}
+              items={items}
+            />
+          ).toBlob();
+
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `Invoice-${inv.invoice_number || 'INV'}.pdf`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          setTimeout(() => URL.revokeObjectURL(url), 5000);
+          return url;
+        } else {
+          alert('Could not retrieve full invoice details to generate PDF.');
+        }
+      } catch (genErr) {
+        console.error('Error generating PDF on demand:', genErr);
+        alert('Could not generate PDF: ' + genErr.message);
+      }
+      return null;
     } else if (action === 'edit') {
       console.log(`Editing invoice: ${invoiceId}`);
     } else if (action === 'updateStatus') {

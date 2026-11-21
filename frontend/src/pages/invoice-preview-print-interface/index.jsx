@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { pdf } from '@react-pdf/renderer';
+import InvoicePDFDocument from '../../components/pdf/InvoicePDFDocument';
 import Header from '../../components/ui/Header';
 import Breadcrumb from '../../components/ui/Breadcrumb';
 import Button from '../../components/ui/Button';
@@ -75,18 +77,54 @@ const InvoicePreviewPrintInterface = () => {
     navigate('/invoice-creation-dashboard');
   };
 
-  const handleDownloadPDF = () => {
-    // In a real app, this would generate and download the PDF
-    console.log('Downloading PDF for invoice:', invoiceData?.invoiceNumber);
-    
-    // Simulate PDF generation
-    const link = document.createElement('a');
-    link.href = '#'; // Would be actual PDF blob URL
-    link.download = `Invoice-${invoiceData?.invoiceNumber || 'INV-07-2025-632'}.pdf`;
-    // link.click(); // Commented out to prevent actual download in demo
-    
-    // Show success message (in real app, would use toast notification)
-    alert('PDF download started!');
+  const handleDownloadPDF = async () => {
+    try {
+      if (!invoiceData) return;
+      const invoiceDetails = {
+        invoiceNumber: invoiceData.invoiceNumber,
+        issueDate: invoiceData.creationDate,
+        dueDate: invoiceData.dueDate,
+        paymentTerms: invoiceData.terms,
+        notes: invoiceData.notes,
+        currency: 'USD'
+      };
+      const companyData = {
+        name: invoiceData.company?.name,
+        email: invoiceData.company?.email,
+        phone: invoiceData.company?.phone,
+        address: invoiceData.company?.address,
+        logo: invoiceData.company?.logo
+      };
+      const customerData = {
+        name: invoiceData.customer?.name,
+        email: invoiceData.customer?.email,
+        phone: invoiceData.customer?.phone,
+        address: invoiceData.customer?.address
+      };
+      const items = invoiceData.items || [];
+
+      const blob = await pdf(
+        <InvoicePDFDocument
+          invoiceDetails={invoiceDetails}
+          companyData={companyData}
+          customerData={customerData}
+          items={items}
+        />
+      ).toBlob();
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Invoice-${invoiceData.invoiceNumber || 'INV'}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+      alert('✅ PDF downloaded successfully!');
+    } catch (err) {
+      console.error('Error generating PDF:', err);
+      window.print();
+    }
   };
 
   const handleQuickPrint = () => {

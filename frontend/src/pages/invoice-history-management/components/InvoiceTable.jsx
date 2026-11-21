@@ -75,15 +75,12 @@ const InvoiceTable = ({
     }
   };
 
- const handleDownload = async (invoiceId) => {
-  const fileUrl = await onAction('download', invoiceId);
-  if (fileUrl) {
-    // Open in new tab
-    window.open(fileUrl, '_blank');
-  } else {
-    console.error('Download URL not returned');
-  }
-};
+  const handleDownload = async (invoiceId) => {
+    const fileUrl = await onAction('download', invoiceId);
+    if (fileUrl && (fileUrl.startsWith('http://') || fileUrl.startsWith('https://'))) {
+      window.open(fileUrl, '_blank');
+    }
+  };
 
 
   const isAllSelected = invoices.length > 0 && selectedInvoices.length === invoices.length;

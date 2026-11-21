@@ -81,15 +81,13 @@ const MobileInvoiceCard = ({ invoice, isSelected, onSelect, onAction }) => {
           iconName="Download"
           onClick={async () => {
             const url = await onAction('download', invoice.id);
-            if (url) {
+            if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
               const link = document.createElement('a');
               link.href = url;
-              link.download = invoice.invoiceNumber + '.pdf';
+              link.download = (invoice.invoiceNumber || 'invoice') + '.pdf';
               document.body.appendChild(link);
               link.click();
               document.body.removeChild(link);
-            } else {
-              console.error('PDF URL not found');
             }
           }}
           className="flex-1 text-text-muted hover:text-primary"

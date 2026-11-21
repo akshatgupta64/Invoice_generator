@@ -16,52 +16,57 @@ const InvoicePreviewModal = ({
  
 
   const handleGenerateAndSave = async (blob, url, invoiceIdFromProp) => {
-    if (!blob || !invoiceIdFromProp) {
-      console.warn('Missing blob or invoiceId, skipping upload.');
+    if (!blob) {
+      alert('PDF is still generating, please wait a moment...');
       return;
     }
 
+    // 1. Always trigger the browser download immediately from the blob
     try {
-      console.log('Uploading PDF to Supabase Storage.');
-      const filePath = `${invoiceIdFromProp}.pdf`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('invoices')
-        .upload(filePath, blob, { contentType: 'application/pdf', upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage.from('invoices').getPublicUrl(filePath);
-
-      const { error: updateError } = await supabase
-        .from('invoices')
-        .update({ pdf_url: publicUrl })
-        .eq('id', invoiceIdFromProp);
-
-      if (updateError) throw updateError;
-
-      // Trigger download after successful upload and database update
-      if (url) {
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `invoice_${invoiceDetails?.invoiceNumber || 'draft'}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+      const fileName = `Invoice_${invoiceDetails?.invoiceNumber || 'draft'}.pdf`;
+      const downloadUrl = url || URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      if (!url) {
+        setTimeout(() => URL.revokeObjectURL(downloadUrl), 5000);
       }
-
-      alert('✅ PDF generated and saved successfully!');
-      if (propOnGenerateAndSave) {
-        propOnGenerateAndSave(publicUrl);
-      }
-      // Call generateInvoiceNumber to ensure the next invoice number is correct
-      // This assumes generateInvoiceNumber is passed down or accessible here
-      // For now, we'll assume it's handled by the parent component after this modal closes
-      // or we need to pass it as a prop.
-    } catch (error) {
-      console.error('Error generating or saving PDF:', error.message);
-      alert('❌ Failed to generate or save PDF: ' + error.message);
+    } catch (dlErr) {
+      console.error('Error triggering local PDF download:', dlErr);
     }
+
+    // 2. Best-effort upload to Supabase Storage if an invoice ID exists
+    if (invoiceIdFromProp) {
+      try {
+        console.log('Attempting to upload PDF to Supabase Storage...');
+        const filePath = `${invoiceIdFromProp}.pdf`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('invoices')
+          .upload(filePath, blob, { contentType: 'application/pdf', upsert: true });
+
+        if (!uploadError) {
+          const { data: { publicUrl } } = supabase.storage.from('invoices').getPublicUrl(filePath);
+          await supabase
+            .from('invoices')
+            .update({ pdf_url: publicUrl })
+            .eq('id', invoiceIdFromProp);
+
+          if (propOnGenerateAndSave) {
+            propOnGenerateAndSave(publicUrl);
+          }
+        } else {
+          console.warn('Supabase storage upload note:', uploadError.message);
+        }
+      } catch (storageErr) {
+        console.warn('Supabase storage upload skipped or failed:', storageErr.message);
+      }
+    }
+
+    alert('✅ Invoice PDF downloaded successfully!');
   };
 
   if (!isOpen) return null;
@@ -104,13 +109,12 @@ const InvoicePreviewModal = ({
               <>
                 <button
                   onClick={() => {
-                    console.log('Generating & saving PDF, invoiceDetails.id:', invoiceDetails?.id);
-                    if (invoiceDetails?.id) handleGenerateAndSave(blob, url, invoiceDetails.id);
+                    handleGenerateAndSave(blob, url, invoiceDetails?.id);
                   }}
-                  className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+                  className="px-4 py-2 bg-green-500 text-white font-medium rounded hover:bg-green-600 shadow-sm transition-colors"
                   disabled={loading || !blob}
                 >
-                  {loading ? 'Generating...' : 'Generate & Save PDF'}
+                  {loading ? 'Generating PDF...' : 'Download PDF'}
                 </button>
 
                 {error && (
