@@ -237,7 +237,19 @@ FOR ALL USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
 
 -- Invoice Items
 CREATE POLICY "users_access_invoice_items" ON public.invoice_items 
-FOR ALL USING (public.can_access_invoice_item(id)) WITH CHECK (public.can_access_invoice_item(id));
+FOR ALL 
+USING (
+    EXISTS (
+        SELECT 1 FROM public.invoices i
+        WHERE i.id = invoice_items.invoice_id AND i.user_id = auth.uid()
+    )
+) 
+WITH CHECK (
+    EXISTS (
+        SELECT 1 FROM public.invoices i
+        WHERE i.id = invoice_items.invoice_id AND i.user_id = auth.uid()
+    )
+);
 
 -- Invoice Templates
 CREATE POLICY "users_manage_templates" ON public.invoice_templates 
